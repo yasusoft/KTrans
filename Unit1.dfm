@@ -9,7 +9,7 @@ object Form1: TForm1
   Font.Charset = SHIFTJIS_CHARSET
   Font.Color = clWindowText
   Font.Height = -12
-  Font.Name = 'ＭＳ Ｐゴシック'
+  Font.Name = #65325#65331' '#65328#12468#12471#12483#12463
   Font.Style = []
   OldCreateOrder = False
   Position = poScreenCenter
@@ -207,7 +207,7 @@ object Form1: TForm1
         Top = 25
         Width = 30
         Height = 20
-        Caption = '↓'
+        Caption = #8595
         TabOrder = 2
         OnClick = ButtonDownClick
       end
@@ -225,7 +225,7 @@ object Form1: TForm1
         Top = 25
         Width = 30
         Height = 20
-        Caption = '↑'
+        Caption = #8593
         TabOrder = 0
         OnClick = ButtonUpClick
       end
@@ -270,11 +270,11 @@ object Form1: TForm1
     Align = alLeft
     Columns = <
       item
-        Caption = 'ファイル名'
+        Caption = #12501#12449#12452#12523#21517
         Width = 90
       end
       item
-        Caption = '拡張子'
+        Caption = #25313#24373#23376
       end>
     FullDrag = True
     HideSelection = False
@@ -290,9 +290,9 @@ object Form1: TForm1
     OnDblClick = ListFileDblClick
   end
   object OpenDialog: TOpenDialog
-    Filter = 'すべてのファイル(*.*)|*.*'
+    Filter = #12377#12409#12390#12398#12501#12449#12452#12523'(*.*)|*.*'
     Options = [ofHideReadOnly, ofAllowMultiSelect, ofPathMustExist, ofFileMustExist, ofEnableSizing]
-    Title = 'ファイルを選択'
+    Title = #12501#12449#12452#12523#12434#36984#25246
     Left = 10
     Top = 40
   end
@@ -311,9 +311,9 @@ object Form1: TForm1
     end
   end
   object SaveDialog: TSaveDialog
-    Filter = 'すべてのファイル(*.*)|*.*'
+    Filter = #12377#12409#12390#12398#12501#12449#12452#12523'(*.*)|*.*'
     Options = [ofOverwritePrompt, ofHideReadOnly, ofPathMustExist, ofNoReadOnlyReturn, ofEnableSizing]
-    Title = 'ファイルに保存'
+    Title = #12501#12449#12452#12523#12395#20445#23384
     Left = 10
     Top = 75
   end

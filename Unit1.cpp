@@ -885,7 +885,7 @@ void __fastcall TMyThread::Execute()
       int filesize;
 
       AnsiString age;
-      if (RemoteFile.Pos("\\") == 0)
+      if (ExtractFileDir(RemoteFile) == "")
       {
         // SetFile{FileName(STR\0)}
         LogAdd("SetFile(" + RemoteFile + ")");
@@ -970,7 +970,12 @@ void __fastcall TMyThread::Execute()
           LogAdd("GetFileé∏îs");
           return;
         }
-        mem->SaveToFile(LocalFile);
+
+        AnsiString lfile = LocalFile;
+        int n = 1;
+        while (FileExists(lfile) && n < 100)
+          lfile = ChangeFileExt(lfile,"") + "(" + IntToStr(n++) + ")" + ExtractFileExt(lfile);
+        mem->SaveToFile(lfile);
 
         // É^ÉCÉÄÉXÉ^ÉìÉvê›íË
         HANDLE h = CreateFile(LocalFile.c_str(), GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
@@ -994,7 +999,7 @@ void __fastcall TMyThread::Execute()
       }
       delete mem;
 
-      if (RemoteFile.Pos("\\") != 0)
+      if (ExtractFileDir(RemoteFile) != "")
       {
         // SDSetDir{Path(STR\0)}
         LogAdd("SetDirSD(\\)...");
@@ -1010,7 +1015,7 @@ void __fastcall TMyThread::Execute()
     {
       unsigned short pfcmd = 0x0110;
       
-      if (RemoteFile.Pos("\\") != 0)
+      if (ExtractFileDir(RemoteFile) != "")
       {
         // SDSetDir{Path(STR\0)}
         LogAdd("SetDirSD(\\)...");
@@ -1089,7 +1094,7 @@ void __fastcall TMyThread::Execute()
       }
       delete mem;
 
-      if (RemoteFile.Pos("\\") != 0)
+      if (ExtractFileDir(RemoteFile) != "")
       {
         // SDSetDir{Path(STR\0)}
         LogAdd("SetDirSD(\\)...");
@@ -1103,13 +1108,44 @@ void __fastcall TMyThread::Execute()
     }
     else if (Task.SubString(1, 7) == "DelFile")
     {
+      unsigned short pfcmd = 0x0110;
+      
+      if (ExtractFileDir(RemoteFile) != "")
+      {
+        // SDSetDir{Path(STR\0)}
+        LogAdd("SetDirSD(\\)...");
+        if (!Command(hCom, 0x00B1, "\\", 2))
+        {
+          WriteBuf(hCom, "\x04", 1);
+          LogAdd("SDSetDiré∏îs");
+          return;
+        }
+
+        AnsiString d = ExtractFileDir(RemoteFile);
+        RemoteFile = ExtractFileName(RemoteFile);
+        if (d[1] == '\\' && d.Length() != 1)
+          d = d.SubString(2, d.Length() - 1);
+
+        // SDSetDir{Path(STR\0)}
+        LogAdd("SetDirSD(" + d + ")...");
+        len = d.Length()+1;
+        CopyMemory(buf, d.c_str(), len);
+        if (!Command(hCom, 0x00B1, buf, len))
+        {
+          WriteBuf(hCom, "\x04", 1);
+          LogAdd("SDSetDiré∏îs");
+          return;
+        }
+        pfcmd = 0x01B0;
+      }
+
       // PutFile{FileName(STR\0),FileSize(4B)}
       LogAdd("DelFile(" + RemoteFile + ")...");
       len = RemoteFile.Length()+1;
       CopyMemory(buf, RemoteFile.c_str(), len);
       ZeroMemory(buf + len, 4);
       len += 4;
-      if (!Command(hCom, 0x0110, buf, len))
+      if (!Command(hCom, pfcmd, buf, len))
       {
         WriteBuf(hCom, "\x04", 1);
         LogAdd("DelFileé∏îs");
@@ -1121,6 +1157,18 @@ void __fastcall TMyThread::Execute()
         WriteBuf(hCom, "\x04", 1);
         LogAdd("DelFileé∏îs");
         return;
+      }
+
+      if (ExtractFileDir(RemoteFile) != "")
+      {
+        // SDSetDir{Path(STR\0)}
+        LogAdd("SetDirSD(\\)...");
+        if (!Command(hCom, 0x00B1, "\\", 2))
+        {
+          WriteBuf(hCom, "\x04", 1);
+          LogAdd("SDSetDiré∏îs");
+          return;
+        }
       }
     }
     else if (Task.SubString(1, 13) == "SDGetFileList")
@@ -1758,7 +1806,7 @@ void __fastcall TForm1::KeyDelFileClick(TObject *Sender)
   for (int i = 0; i < ListFile->Items->Count; i ++)
     if (ListFile->Items->Item[i]->Selected)
     {
-      if (ListFile->Items->Item[i]->Caption.Pos("\\") != 0)
+      if (ExtractFileDir(ListFile->Items->Item[i]->Caption.Pos("\\")) != "")
         continue;
       TTaskInfo *task = new TTaskInfo();
       task->RemoteFile = ListFile->Items->Item[i]->Caption;
