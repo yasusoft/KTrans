@@ -1,0 +1,199 @@
+KDDI au CDMA携帯電話シリアル通信プロトコル
+
+【電話番号取得】S:要求側 R:受信側
+S: 0x8E
+R: 0x9A 0x99 0x9A 0x91 0x92 0x93 0x94 0x95 0x96 0x97 0x98 (090-1234-5678)
+
+【ダイヤルロック要求】
+S: 0x8A
+R: 0x8F
+以降 0x91 などを送信しても
+R: 0x8F
+
+【暗証番号照合】
+S: 0xB1 or 0xB3
+S: 0x01
+S: 0x9A 0x91 0x92 0x93
+S: 0x86
+R: 0x86(OK) or 0x87(NG)
+R: 0x01
+
+【ハンズフリーON】
+S: 0xB4 0x01
+R: 0x88 0x01
+携帯電話のキー押すと
+R: 0x28 0x0A
+R: 0x28 0x01
+R: 0x28 0x02
+R: 0x28 0x03
+0,1,2,3が押されたなどが来る
+【ハンズフリーOFF】
+S: 0xB4 0x00
+R: 0x88 0x00
+
+■ データ転送
+
+【接続開始】S:要求側 R:受信側
+S: 0xD0 0x01 0x05 (応答あるまで何度も送信)
+R: 0xD0 0x01 0x06
+S: 0x05
+R: 0x06 (了解)
+
+【エラー時】S:要求側 R:受信側
+S: 0x08
+R: 0x08
+
+【終了時】S:要求側 R:受信側
+S: 0x04
+R: 0x08
+
+【ぴんぽん】
+S: 0x05
+R: 0x06
+
+【コマンド】
+S: 0x01 0x00 データ長(2bytes) 0x02 コマンド番号(2bytes) 引数… 0x03 Check(2bytes)
+R: (0x07(処理中...))
+R: 0x06(OK) or 0x07(処理中) or 0x15(未知コマンドorCheck不整合) or 0x18(拒否)
+例(コマンド1234,引数5555): \x01\x00\x00\x08\x02\x12\x34\x55\x55\x03\xFF\x01
+・データが次に続く場合は 0x03 → 0x17
+・Check は 頭からのチェックサムのNOT
+・コマンド番号 1バイト目：00=Set 01=Put 02=Get
+・コマンド番号 2バイト目：11=Dir 13=DirInfo 15=DirList 20=PIM 21=LockNo 22=Function 23=Cellular 3?=forCamera 4?=forKeyboard 5?=forPrinter 6?=forPC 7?=forPDA 8?=forMI 9?=forWatch
+0204: GetProfile{Number(2B)}
+0004: SetProfile
+0210: GetFile{FileName(STR\0)}
+0212: GetFileInfo{} SetFileでファイルを選択後
+0214: GetFileList{}
+0010: SetFile{FileName(STR\0)}
+0110: PutFile{FileName(STR\0),FileSize(4B)}
+0011: SetDir
+0012: SetFileInfo
+0013: SetDirInfo
+0014: SetFileList
+0000: SetProtocolVersion{Version(4B)}
+0001: SetBaudRate{BaudRate(4B)}
+0002: SetParityBit{Parity(1B)}
+0003: SetFrameSize{FrameSize(4B)}
+0120: PutPIM{(2B),(2B)}
+0220: GetPIM
+0123: PutCellular
+0023: SetCellular
+0021: SetLockNo{(STR)}
+0040: Set??? for Keyboard Profile
+00B1: SDCard_SetDir{Path(STR\0)}
+00B4: SDCard_GetFileList{}
+00B6: SDCard_GetDirInfo?{}
+01B0: SDCard_PutFile{FileName(STR\0),FileSize(4B)}
+02B0: SDCard_GetFile{FileName(STR\0)}
+・SetProtocolVersion
+データは 0x00010000
+・PutFile
+S: 0x01 0x80 データ長(2bytes) 0x02 ファイルデータ… 0x03or0x17 Check(2bytes)
+R: 0x06(OK) or 0x15(NG)
+データ長ゼロで削除
+・GetFileInfo
+R: 0x01 0x80 データ長(2bytes) 0x02 ファイル名0x00 ゼロ？(4bytes) ファイルサイズ(4bytes) 日時 0x0? 0x0? 0x00 0x00 0x00 ゼロ？(4bytes) ゼロ？(4bytes) ゼロ？(4bytes) 0x03 Check(2bytes)
+S: 0x06
+日時は 200307141527301234 (2003/07/14 15:27:30.1234?)
+・GetFile
+R: 0x01 0x80 データ長(2bytes) 0x02 ファイルデータ… 0x03or0x17 Check(2bytes)
+S: 0x06
+・GetProfile(0000h) GenericProfile
+R: 0x01 0x80 データ長(2bytes) 0x02 タイプ数(2bytes) タイプ１(2bytes) タイプ２(2bytes)… メーカー長(2bytes) メーカー名 デバイス長(2bytes) デバイス名 バージョン(4bytes) ゼロ？(4bytes) 受信可能サイズ(4bytes) コマンド数(2bytes) コマンド…(2bytes x数) 0x03 Check(2bytes)
+S: 0x06(OK) or 0x15(NG)
+タイプ：0000h=Generic 0100h=CellularPhone 0200h=DigitalCamera 0300h=Printer 0400h=PDA 0500h=PC 0600h=MusicalInstrument 0700h=Watch 0800h=Keyboard
+・GetProfile(0100h) ApplicationProfile
+R: 0x01 0x80 データ長(2bytes) 0x02 アドレスサポート(1byte) グループサポート(1byte) スケジュールサポート(1byte) タスクサポート(1byte) E-Mailサポート(1byte) C-Mailサポート(1byte) SkyMsgサポート(1byte) アドレスメモリサイズ(4bytes) スケジュールメモリサイズ(4bytes) タスクメモリサイズ(4bytes) E-Mailメモリサイズ(4bytes) C-Mailメモリサイズ(4bytes) 予約(4bytes) SkyMsg最大数(4bytes) FuncTransサポート(1byte) コマンド数(2bytes) コマンド…(2bytes x数) コントロール数(2bytes) コントロールコマンド…(4bytes x数) 0x03 Check(2bytes)
+S: 0x06
+C-Mailサポート：0x02=PacketSMS対応
+コントロールコマンド：00000000h=発信 00000001h=トーン発信 00000002h=？ 00000010h=着信 00000100h=留守番モード設定 80000000h=電源OFF 80000001h=？ ????????=Cメール送信要求 ????????=Cメール蓄積要求
+・GetProfile(0200h) カメラ(パシャパ)用？
+・GetProfile(0900h) Bluetooth用？
+未知
+・GetProfile(0B00h) SDCard?
+01 80 00 5C 02 00 00 00 00 00 00 00 E2 C0 00 00 00 00 00 00 D7…
+・SDCard_GetFileList
+R: 0x01 0x80 データ長(2bytes) 0x02 ファイル数(2bytes) 0x00 0x02 0xFF 0xFF 0xFF 0xFF 2004010219181799(16bytes) ファイル名0x00 説明0x00 0x00 0x02 0xFF 0xFF 0xFF 0xFF 2004010219181799(16bytes) フォルダ名0x00 説明0x00… 0x03 Check(2bytes)
+S: 0x06
+6310652(R,45)	: 0x00 0x01 0x00 0x02 0xFF 0xFF 0xFF 0xFF 0x32 0x30 0x30 0x34 0x30 0x31 0x30 0x37 0x32 0x31 0x30 0x34 0x32 0x34 0x30 0x30 0x31 0x30 0x30 0x4B 0x43 0x41 0x32 0x34 0x00 0x31 0x30 0x30 0x4B 0x43 0x41 0x32 0x34 0x00 0x03 0xF4 0xA5
+7760534(R,75)	: 0x00 0x02 0x00 0x02 0xFF 0xFF 0xFF 0xFF 0x32 0x30 0x30 0x34 0x30 0x31 0x30 0x37 0x32 0x31 0x30 0x34 0x32 0x34 0x30 0x30 0x44 0x43 0x49 0x4D 0x00 0xC3 0xDE 0xBC 0xDE 0xB6 0xD2 0xCC 0xAB 0xD9 0xC0 0xDE 0x00 0x00 0x02 0xFF 0xFF 0xFF 0xFF 0x32 0x30 0x30 0x33 0x31 0x32 0x32 0x32 0x31 0x38 0x34 0x37 0x34 0x30 0x30 0x30 0x50 0x52 0x49 0x56 0x41 0x54 0x45 0x00 0x00 0x03 0xE5 0x07
+・SDCard_GetDirInfo?
+R: 0x01 0x80 データ長(2bytes) 0x02 フォルダ名0x00 ゼロ？(4bytes) 空き容量？(4bytes) 2004010219181799(16bytes) 0x01 ゼロ？(16bytes) 0x03 Check(2bytes)
+S: 0x06
+
+【SDカード】
+S: 01 00 00 08 02 00 B1 5C 00 03 FE E4 // 00B1 \
+R: 06
+S: 01 00 00 06 02 02 B6 03 FF 3B // 02B6
+R: 06
+R: 01 80 00 2E 02 00 00 00 00 00 00 D7 80 00 30 30 30 30 30 30 30…
+S: 06
+S: 01 00 00 06 02 02 B4 03 FF 3D // 02B4
+R: 06
+R: 01 80 00 4C 02 00 02 00 02 FF FF FF FF 32 30 30 34 30 31 30 37…
+S: 06
+S: 01 00 00 0B 02 00 B1 44 43 49 4D 00 03 FE 20 // 00B1 DCIM
+S: 06
+S: 01 00 00 06 02 02 B4 03 FF 3D // 02B4
+R: 06
+R: 01 80 00 2E 02 00 01 00 02 FF FF FF FF 32 30 30 34 30 31 30 37…
+S: 06
+S: 01 00 00 0F 02 00 B1 31 30 30 4B 43 41 32 34 00 03 FD 73 // 00B1 100KCA24
+R: 06
+S: 01 00 00 06 02 02 B4 03 FF 3D // 02B4
+R: 06
+R: 01 80 00 36 02 00 01 00 00 00 02 E0 A5 32 30 30 34 30 31 30 37…
+S: 06
+S: 01 00 00 09 02 00 B1 2E 2E 00 03 FE E3 // 00B1 ..
+R: 06
+S: 01 00 00 09 02 00 B1 2E 2E 00 03 FE E3 // 00B1 ..
+R: 06
+S: 01 00 00 0E 02 00 B1 50 52 49 56 41 54 45 00 03 FD 1F // 00B1 PRIVATE
+R: 06
+S: 01 00 00 06 02 02 B4 03 FF 3D // 02B4
+R: 06
+R: 01 80 00 47 02 00 02 00 02 FF FF FF FF 32 30 30 33 31 32 32 32…
+S: 06
+S: 01 00 00 09 02 00 B1 41 55 00 03 FE A9 // 00B1 AU
+R: 06
+S: 01 00 00 06 02 02 B4 03 FF 3D // 02B4
+R: 06
+R: 01 80 00 06 02 00 00 03 FF 73 // 空っぽ
+S: 06
+
+【SDから受信】
+S: 01 00 00 08 02 00 B1 5C 00 03 FE E4 // 00B1 \
+R: 06
+S: 01 00 00 13 02 02 B0 43 41 32 34 30 30 30 31 2E 4A 50 47 00 03 // 02B0 CA240001.JPG
+R: 06
+R: 01 80 0F FC 02 FF D8 FF E1 27 06 45 78 69 66 00 00 4D 4D 00 2A…
+S: 07
+S: 06
+S: 01 00 00 08 02 00 B1 5C 00 03 FE E4 // 00B1 \
+R: 06
+
+【SDへ送信】
+S: 01 00 00 08 02 00 B1 5C 00 03 FE E4 // 00B1 \
+R: 06
+S: 01 00 00 06 02 02 B6 03 FF 3B // 02B6
+R: 06
+R: 01 80 00 2E 02 00 00 00 00 00 00 D7 80 00 30 30 30 30 30 30 30…
+S: 06
+S: 01 00 00 08 02 00 B1 5C 00 03 FE E4 // 00B1 \
+R: 06
+S: 01 00 00 17 02 01 B0 43 41 32 34 30 30 32 30 2E 6A 70 67 00 00… // 01B0 CA240020.JPG
+R: 06
+S: 01 80 0F FC 02 FF D8 FF E1 29 FC 45 78 69 66 00 00 4D 4D 00 2A…
+R: 06
+S: 01 00 00 08 02 00 B1 5C 00 03 FE E4 // 00B1 \
+R: 06
+
+【SD挿してる時】
+S: 01 00 00 08 02 02 04 0B 00 03 FF E0 // GetProfile(0B00h)
+R: 06
+R: 01 80 00 5C 02 00 00 00 00 00 00 00 E2 C0 00 00 00 00 00 00 D3…
+【SDない時】
+S: 01 00 00 08 02 02 04 0B 00 03 FF E0 // GetProfile(0B00h)
+R: 06
+R: 01 80 00 5C 02 02 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00…

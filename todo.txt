@@ -1,0 +1,22 @@
+オートロック設定してると使えない
+「サザンメドレー.mmf」「シーソーゲーム」で転送時にSDSetDirされる
+タイトルに進行状況表示
+失敗しても次を実行オプション
+失敗判断が甘い データが足りない時すぐ再試行
+Explorerの.kjxや.pngや.pmdや.mmfにKTransで転送メニュー 複数ファイル対応
+ログに電話番号は記さない
+0xD0 0x01 0x05の返事 0x05 でなくてもすぐ失敗としない
+0xD0 0x01 0x05送る回数に制限
+SetFrameSize結果表示
+MySync専用USBケーブル自動ポート認識
+LogDebugにFrameSizeやBaudRate変更も記録
+
+エクスプローラーライク
+sd:\folder
+df:\
+file: Microsoft Explorerで
+http: https: Microsoft Internet Explorerで見て下さい
+ftp: FFFTPでも
+telnet: TeraTerm Pro
+device: 携帯で見て
+mailto: メーラー or ShellExecute
